@@ -1,4 +1,4 @@
-# Section 6 - Kafka Java Programming
+# Section 7 - Kafka Java Programming
 
 ## Quiz 3: Kafka Java Programming
 
