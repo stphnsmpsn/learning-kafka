@@ -108,9 +108,9 @@ Shows us that the topic was created but with 1 partition and a replications fact
 
 Note: **Default properties can be changed in server.properties**
 
-## Consumers (`kafka-console.consumer.sh`)
+## Consumers (`kafka-console-consumer.sh`)
 
-Runnin the following command will not yield any results: 
+Running the following command will not yield any results: 
 ```
 kafka-console-consumer.sh --bootstrap-server 127.0.0.1:9092 --topic first_topic
 ```
@@ -122,3 +122,129 @@ If we do need to consume all messages in a topic, we can do so as follows:
 ```
 kafka-console-consumer.sh --bootstrap-server 127.0.0.1:9092 --topic first_topic --from-beginning
 ```
+
+## Kafka Consumers in Group (`kafka-console-consumer.sh`)
+
+Here, we will create a producer, and two consumers for a topic. Messages send from the producer will be spread across producers. 
+
+Note: a single partition is never shared across consumers within the same group unless a consumer goes offline. The number of partitions a topic has has to equal the maximum number of consumers in a group that can feed from a topic. 
+```
+kafka-console-producer.sh --broker-list 127.0.0.1:9092 --topic first_topic
+kafka-console-consumer.sh --bootstrap-server 127.0.0.1:9092 --topic first_topic --group my-first-application
+kafka-console-consumer.sh --bootstrap-server 127.0.0.1:9092 --topic first_topic --group my-first-application
+```
+
+Also worth noting... the from-beginning option will only work as you might expect if the group has not yet committed its offset to Kafka... That is to say, running:
+
+```
+kafka-console-consumer.sh --bootstrap-server 127.0.0.1:9092 --topic first_topic --group my-second-application --from-beginning
+```
+Will list all messages in a topic. However, if we stop this consumer and start it again:
+```
+kafka-console-consumer.sh --bootstrap-server 127.0.0.1:9092 --topic first_topic --group my-second-application --from-beginning
+```
+It will only list new messages since we have stopped it. 
+
+## Kafka Consumer Groups (`kafka-consumer-groups.sh`)
+
+### Listing Consumer Groups
+To list consumer groups, issue the following command:
+```
+kafka-consumer-groups.sh --bootstrap-server 127.0.0.1:9092 --list
+```
+Notice that any consumers that were run without the `--group` option have created consumer groups with unique identifiers: `console-consumer-#####`. 
+
+### Describing Consumer Groups
+```
+kafka-consumer-groups.sh --bootstrap-server 127.0.0.1:9092 --describe --group my-second-application
+```
+Which should give the following output: 
+>            GROUP             TOPIC     PARTITION  CURRENT-OFFSET  LOG-END-OFFSET  LAG  CONSUMER-ID  HOST  CLIENT-ID
+>     my-first-application  first_topic     0            0               0          0       -         -       -
+>     my-first-application  first_topic     1            1               1          0       -         -       -
+>     my-first-application  first_topic     2            1               1          0       -         -       -
+
+**LAG** tells us how many messages a consumer is behind processing. If there are no unprocessed messages, lag will be 0 and the **CURRENT-OFFSET** will match the **LOG-END-OFFSET**. 
+
+The **CONSUMER-ID** field will be populated if there are active consumers running. 
+
+### Resetting Offsets
+
+Resets offsets of a defined consumer group. Supports one consumer group at a time and instances should be inactive.
+We have several options for resetting offsets:
+1. --to-datetime
+2. --by-period
+3. --to-earliest
+4. --to-latest
+5. --shift-by
+6. --from-file
+7. --to-current
+
+We must also specify the topic for which we want to reset the offsets. The command will look like:
+```
+kafka-consumer-groups.sh --bootstrap-server 127.0.0.1:9092 --group my-first-application --reset-offsets --to-earliest --execute --topic first_topic
+```
+And the output:
+>       GROUP                   TOPIC          PARTITION  NEW-OFFSET     
+>       my-first-application    first_topic    0          0              
+>       my-first-application    first_topic    2          0              
+>       my-first-application    first_topic    1          0
+
+## Additional CLI Options
+The CLI has many options, but here are several others that are commonly used: 
+
+## Producer with Keys
+```
+kafka-console-producer --broker-list 127.0.0.1:9092 --topic first_topic --property parse.key=true --property key.separator=,
+```
+>       key,value
+>       another key,another value
+
+## Consumer with Keys
+```
+kafka-console-consumer --bootstrap-server 127.0.0.1:9092 --topic first_topic --from-beginning --property print.key=true --property key.separator=,
+```
+
+## UI Options
+1. https://github.com/yahoo/CMAK
+2. Kafka Tools 
+
+## CLI Alternative
+
+[KafkaCat](https://github.com/edenhill/kafkacat) is an open-source alternative to using the Kafka CLI, created by Magnus Edenhill.
+
+Read more [here](https://medium.com/@coderunner/debugging-with-kafkacat-df7851d21968)
+
+## Quiz 2: Quiz on CLI
+
+1. The `kafka-topics` CLI needs to connect to...
+   - [x] Zookeeper
+   - [] Kafka
+
+2. The `kafka-console-producer` CLI needs to connect to...
+   - [x] Kafka
+   - [ ] Zookeeper
+
+3. If I produce to a topic that does not exist, by default...
+   - [ ] I will see an **ERROR** and my producer will not work
+   - [x] I will see a **WARNING** and Kafka will auto create the topic
+
+4. When a topic is auto-created, how many partitions and replication factor does it have by default?
+   - [ ] Partitions: 3, Replication Factor: 1
+   - [x] Partitions: 1, Replication Factor: 1
+   - [ ] Partitions: 3, Replication Factor: 3
+
+   Note: These can be controlled by the `settings.num.partitions` and `default.replication.factor` properties. 
+
+5. kafka-console-consumer...
+   - [ ] does not use a group ID
+   - [ ] always uses the same group ID
+   = [x] uses a random group ID
+
+6. I should override the group.id for `kafka-console-consumer` using...
+   - [x] --group mygroup
+   - [ ] --property group.id=mygroup
+
+7. I perform operations on the consumer offsets using...
+   - [ ] kafka-console-consumer
+   - [x] kafka-consumer-groups
