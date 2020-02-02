@@ -1,2 +1,2 @@
 mvn clean package
-java -cp target/learning-kafka-jar-with-dependencies.jar dev.stephensampson.kafka.ProducerDemo
+java -cp target/learning-kafka-jar-with-dependencies.jar dev.stephensampson.kafka.Main
