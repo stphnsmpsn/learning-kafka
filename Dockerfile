@@ -22,7 +22,6 @@ RUN sed -i 's/export KAFKA_HEAP_OPTS="-Xmx1G -Xms1G"/export KAFKA_HEAP_OPTS="-Xm
 # Copy Maven project 
 COPY src/ /opt/learning-kafka/src
 COPY pom.xml /opt/learning-kafka/
-#COPY .settings/ /opt/learning-kafka/.settings
 
 # Expose Kafka and Zookeeper Default Ports
 EXPOSE 9092 
